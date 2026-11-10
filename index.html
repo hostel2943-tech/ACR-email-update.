@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101d35">
+<script src="https://cdn.jsdelivr.net/npm/@capacitor/core@8.6.0/dist/capacitor.js"></script>
+<title>ACR · Hostel Account Register</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--navy:#101d35;--navy2:#172844;--teal:#16b8a6;--ink:#182338;--muted:#718096;--bg:#f3f6fa;--line:#e5eaf1;--white:#fff;--red:#d94b58;--green:#138a69;--gold:#d79a2b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+#login{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(145deg,#101d35,#1d3a5b)}
+/* Keep both screens hidden until the saved-login check finishes. */
+body:not(.auth-ready) #login,body:not(.auth-ready) #app{display:none!important}
+body.auth-ready #login:not(.hidden){display:grid}
+body.auth-ready #app:not(.hidden){display:block}
+.login-card{background:#fff;width:min(420px,100%);padding:30px;border-radius:22px;box-shadow:0 24px 70px #0003}.brandmark{width:48px;height:48px;border-radius:15px;background:var(--teal);color:#062d32;display:grid;place-items:center;font-weight:900;font-size:19px}
+h1,h2,h3,p{margin-top:0}.login-card h1{margin:18px 0 5px;font-size:25px}.sub{color:var(--muted);font-size:13px}
+.field{display:grid;gap:6px;margin:12px 0}.field label{font-size:12px;font-weight:700;color:#536176}.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #dbe2eb;border-radius:10px;background:#fff;color:var(--ink);outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px #16b8a61c}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:var(--navy);color:#fff}.btn.teal{background:var(--teal);color:#062e32}.btn.light{background:#eaf0f6;color:#20324b}.btn.red{background:#fff0f1;color:#b72e40}.btn.small{padding:7px 10px;font-size:12px}.btn:disabled{opacity:.55;cursor:not-allowed}
+#app{min-height:100vh}.topbar{height:68px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:10}.top-left{display:flex;gap:12px;align-items:center}.logo{height:38px;width:38px;border-radius:12px;background:var(--teal);color:#07353b;display:grid;place-items:center;font-weight:900}.topbar strong{font-size:16px}.topbar small{display:block;color:#aabbd0;font-size:11px}.top-actions{display:flex;align-items:center;gap:12px}.main{max-width:1320px;margin:auto;padding:24px}.welcome{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:18px}.welcome h1{font-size:25px;margin:0 0 3px}.welcome p{margin:0;color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}.stat{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;min-width:0}.stat-head{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;font-weight:700}.stat-icon{height:31px;width:31px;display:grid;place-items:center;border-radius:10px;background:#e9f8f6;color:#087f75;font-size:16px}.stat strong{display:block;font-size:25px;margin:9px 0 3px;letter-spacing:-.5px}.stat small{font-size:10px;color:#8995a6}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:20px 0 12px}.section-title h2{font-size:16px;margin:0}.modules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.module{border:1px solid var(--line);background:#fff;border-radius:15px;padding:17px;display:flex;gap:13px;align-items:center;text-align:left;color:var(--ink);transition:.15s}.module:hover{border-color:#9edbd4;transform:translateY(-1px);box-shadow:0 8px 22px #142b4510}.module .ico{height:42px;width:42px;border-radius:13px;background:#edf4fa;display:grid;place-items:center;font-size:20px;flex:none}.module b{display:block;font-size:14px}.module small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:16px}.panel h2{font-size:18px;margin:0}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.toolbar input,.toolbar select{border:1px solid var(--line);border-radius:9px;padding:9px 10px;min-width:150px}
+.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:620px}th,td{text-align:left;padding:11px 10px;border-bottom:1px solid #edf0f4;font-size:13px}th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#758297;background:#fafbfd}td .muted{display:block;color:#8a96a7;font-size:11px}.amount{font-variant-numeric:tabular-nums;font-weight:700}.positive{color:var(--green)}.negative{color:var(--red)}.empty{text-align:center;padding:28px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.notice{padding:12px 14px;border-radius:10px;background:#edf8f7;color:#22635d;font-size:12px;margin:10px 0}.muted{color:var(--muted)}.pill{display:inline-block;border-radius:99px;padding:4px 8px;background:#edf3f8;color:#52647a;font-size:11px}.pill.active{background:#e8f7ef;color:#17734f}.actions{display:flex;gap:6px;flex-wrap:wrap}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#172844;color:#fff;padding:11px 16px;border-radius:11px;z-index:99;box-shadow:0 8px 28px #0003;max-width:90vw;font-size:13px}
+.modal-back{position:fixed;inset:0;background:#0b1729a6;z-index:50;display:grid;place-items:center;padding:16px}.modal{background:#fff;width:min(600px,100%);max-height:90vh;overflow:auto;border-radius:17px;padding:21px;box-shadow:0 20px 70px #0004}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.modal-head h3{margin:0;font-size:18px}.close{border:0;background:#edf1f5;border-radius:9px;width:32px;height:32px;font-size:18px}.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.foot{padding:25px;text-align:center;color:#94a0b0;font-size:11px}
+@media(max-width:800px){.main{padding:17px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.modules{grid-template-columns:repeat(2,minmax(0,1fr))}.topbar{padding:0 15px}.welcome h1{font-size:21px}}
+@media(max-width:520px){
+/* Galaxy A17-friendly phone dashboard: comfortable spacing while keeping the 2x2 stats and 3x3 module grid. */
+#app{min-height:100dvh}.topbar{height:58px;padding:0 13px}.top-left{gap:9px}.logo{height:35px;width:35px;border-radius:10px}.topbar strong{font-size:13px}.topbar .subtop{display:none}.top-actions{gap:8px}.topbar .btn{padding:7px 10px;font-size:11px}
+.main{padding:14px 13px 18px}.welcome{align-items:center;flex-direction:row;gap:8px;margin-bottom:13px}.welcome h1{font-size:20px;margin:0}.welcome p{font-size:10px;line-height:1.3;margin-top:3px}.welcome .pill{font-size:10px;padding:4px 7px;white-space:nowrap}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:15px}.stat{padding:12px;border-radius:13px}.stat-head{font-size:10px;line-height:1.2;gap:5px}.stat-icon{height:27px;width:27px;border-radius:8px;font-size:14px}.stat strong{font-size:19px;margin:6px 0 2px;letter-spacing:-.3px}.stat small{font-size:9px;line-height:1.2}
+.section-title{margin:13px 0 10px}.section-title h2{font-size:14px}.section-title>span{font-size:10px!important}
+.modules{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.module{min-width:0;min-height:clamp(82px,11.5vh,100px);padding:9px 5px;border-radius:13px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;text-align:center;overflow:hidden}.module .ico{height:31px;width:31px;border-radius:9px;font-size:17px}.module b{font-size:10px;line-height:1.18;overflow-wrap:anywhere}.module small{display:none}
+.panel{padding:15px}.grid2{grid-template-columns:1fr}.foot{display:none}
+}
+@media(max-width:520px) and (max-height:680px){.main{padding-top:9px}.welcome{margin-bottom:8px}.stats{gap:7px;margin-bottom:9px}.stat{padding:9px}.section-title{margin:8px 0 7px}.modules{gap:7px}.module{min-height:72px;padding:6px 3px}.module .ico{height:26px;width:26px;font-size:14px}}
+@media(max-width:360px){.main{padding-left:9px;padding-right:9px}.module b{font-size:9px}.stat-head{font-size:9px}}
+@media print{.topbar,.toolbar,.btn,.module,.foot,.no-print{display:none!important}body{background:#fff}.main{padding:0}.panel,.stat{border:0}}
+</style></head>
+<body>
+<div id="login">
+ <div class="login-card">
+  <div class="brandmark">ACR</div><h1>Hostel Account Register</h1><p class="sub">Warden sign in</p>
+  <div class="field"><label>Warden email</label><input id="email" type="email" autocomplete="username"></div>
+  <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div>
+  <button class="btn teal" style="width:100%;margin-top:8px" onclick="login()">Sign in securely</button>
+  <p class="sub" style="margin:14px 0 0">Secure sign-in using your existing Supabase Warden account.</p>
+ </div>
+</div>
+<div id="app" class="hidden">
+ <header class="topbar"><div class="top-left"><div class="logo">ACR</div><div><strong>Hostel Account Register</strong><small class="subtop">WARDEN DASHBOARD · INDIA</small></div></div><div class="top-actions"><span id="useremail" class="subtop" style="font-size:12px;color:#c2d0df"></span><button class="btn light small" onclick="logout()">Sign out</button></div></header>
+ <main class="main">
+  <div class="welcome"><div><h1>Dashboard</h1><p>Hostel accounts, event funds and Warden cash — maintained separately.</p></div><span class="pill" id="todaylabel"></span></div>
+  <section class="stats">
+   <div class="stat" role="button" tabindex="0" onclick="showStudents()" style="cursor:pointer"><div class="stat-head">REGISTERED STUDENTS <span class="stat-icon">♙</span></div><strong id="s-students">—</strong><small id="u-students">Last updated —</small></div>
+   <div class="stat" role="button" tabindex="0" onclick="showTransactionHistory('all')" style="cursor:pointer"><div class="stat-head">TOTAL BALANCE HELD <span class="stat-icon">₹</span></div><strong id="s-cash">—</strong><small id="u-cash">Last updated —</small></div>
+   <div class="stat" role="button" tabindex="0" onclick="showTransactionHistory('deposit')" style="cursor:pointer"><div class="stat-head">TODAY'S DEPOSITS <span class="stat-icon">↙</span></div><strong id="s-deposits">—</strong><small id="u-deposits">Last updated —</small></div>
+   <div class="stat" role="button" tabindex="0" onclick="showTransactionHistory('withdrawal')" style="cursor:pointer"><div class="stat-head">TODAY'S WITHDRAWALS <span class="stat-icon">↗</span></div><strong id="s-withdrawals">—</strong><small id="u-withdrawals">Last updated —</small></div>
+  </section>
+  <div class="section-title"><h2>ACR Sections</h2><span class="muted" style="font-size:11px">Select a section to manage records</span></div>
+  <section class="modules">
+   <button class="module" onclick="show('events')"><span class="ico">🎪</span><span><b>Event Management</b><small>Event totals and supervisor handovers</small></span></button>
+   <button class="module" onclick="show('add-event')"><span class="ico">＋</span><span><b>Add Event</b><small>Create a new event</small></span></button>
+   <button class="module" onclick="show('contributions')"><span class="ico">🤝</span><span><b>Event Contribution</b><small>Record and report contributors</small></span></button>
+   <button class="module" onclick="show('email')"><span class="ico">✉</span><span><b>Email</b><small>Daily report and event emails</small></span></button>
+   <button class="module" onclick="show('backup')"><span class="ico">⬇</span><span><b>Backup</b><small>Full backup and balance PDF</small></span></button>
+   <button class="module" onclick="show('warden-util')"><span class="ico">₹</span><span><b>Warden Cash Utilization</b><small>Record expenses and repayments</small></span></button>
+   <button class="module" onclick="show('students')"><span class="ico">♙</span><span><b>Students</b><small>View, search and manage registered students</small></span></button>
+   <button class="module" onclick="show('warden-history')"><span class="ico">◷</span><span><b>Warden Utilization History</b><small>Expense and repayment history</small></span></button>
+   <button class="module" onclick="show('transfer')"><span class="ico">⇄</span><span><b>Student Transfer</b><small>Transfer between student accounts</small></span></button>
+  </section>
+  <section id="workspace" class="panel hidden"></section>
+ </main><div class="foot">ACR · Hostel Account Register · Private Warden access</div>
+</div>
+<div id="modalroot"></div><div id="toast" class="hidden"></div>
+<script>
+const SUPABASE_URL='https://ytrttszkgypfrwdurjux.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_GYJ7ygKNfqtTb4O0q8AOXw_Olm_V6uy';
+let sb=null, currentUser=null, students=[], events=[], lastStats={};
+const $=id=>document.getElementById(id);
+function createAcrSupabaseClient_(){
+ return window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
+  auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
+ });
+}
+// Refresh the saved Supabase token immediately before every email request.
+// This is important on Android, where backgrounded WebViews can pause the
+// automatic token-refresh timer for an hour or longer.
+async function getFreshAcrAccessToken_(){
+ if(!sb?.auth)throw Error('ACR sign-in is not ready. Please reopen the app.');
+ let refreshError=null;
+ try{
+  const {data,error}=await sb.auth.refreshSession();
+  if(!error&&data?.session?.access_token)return data.session.access_token;
+  refreshError=error||new Error('No refreshed session was returned.');
+ }catch(e){refreshError=e;}
+ // If refresh failed only because the network briefly failed, an access token
+ // that is still valid can safely be used for this request.
+ const {data,error}=await sb.auth.getSession();
+ if(error)throw error;
+ const session=data?.session;
+ const expiresAt=Number(session?.expires_at||0)*1000;
+ if(session?.access_token&&expiresAt>Date.now()+60000)return session.access_token;
+ throw new Error('Your login session could not be refreshed. Check your internet connection and try again.');
+}
+async function getAcrStartupSession_(){
+ const {data,error}=await sb.auth.getSession();
+ if(error)throw error;
+ let session=data?.session||null;
+ if(session&&session.expires_at&&Number(session.expires_at)*1000<=Date.now()+120000){
+  const {data:refreshed,error:refreshError}=await sb.auth.refreshSession();
+  if(refreshError)throw refreshError;
+  session=refreshed?.session||null;
+ }
+ return session;
+}
+const ACRNative=(window.Capacitor?.isNativePlatform?.()&&window.Capacitor?.registerPlugin)?window.Capacitor.registerPlugin('ACRNative'):null;
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),3200)}
+function localDate(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata'}).format(new Date())}
+function stamp(){return new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'}).format(new Date())}
+async function activateUser_(user){
+ currentUser=user;
+ const {data:admin,error:ae}=await sb.from('acr_admins').select('user_id').eq('user_id',currentUser.id).maybeSingle();
+ if(ae)throw ae;
+ if(!admin){await sb.auth.signOut();currentUser=null;throw Error('This account is not registered in acr_admins.');}
+ $('login').classList.add('hidden');$('app').classList.remove('hidden');$('useremail').textContent=currentUser.email||'';
+ await refreshAll();
+}
+async function login(){
+ try{
+  if(!sb){if(!window.supabase?.createClient)throw Error('Supabase library did not load. Check your internet connection and reopen ACR.');sb=createAcrSupabaseClient_();}
+  const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+  if(error)throw error;
+  await activateUser_(data.user);
+ }catch(e){toast(e.message||'Sign in failed');}
+}
+async function logout(){if(sb)await sb.auth.signOut();currentUser=null;location.reload()}
+async function init(){
+ try{
+  if(!window.supabase?.createClient)throw Error('Supabase library did not load. Check your internet connection and reopen ACR.');
+  sb=createAcrSupabaseClient_();
+  // Keep the Supabase session saved on this device until the warden signs out.
+  // Renew it on app startup if the access token is close to expiry.
+  const session=await getAcrStartupSession_();
+  if(session?.user){
+   try{await activateUser_(session.user);}
+   catch(e){currentUser=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');setTimeout(()=>toast(e.message||'Saved session could not be verified. Please sign in.'),100);}
+  }else{
+   currentUser=null;$('app').classList.add('hidden');$('login').classList.remove('hidden');
+  }
+ }catch(e){
+  $('app').classList.add('hidden');$('login').classList.remove('hidden');
+  setTimeout(()=>toast(e.message||'Could not initialize secure sign-in.'),100);
+ }finally{document.body.classList.add('auth-ready');}
+}
+async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error)throw error;return data}
+async function refreshAll(){try{await Promise.all([loadStudents(),loadEvents(),loadDashboard()]);$('todaylabel').textContent='Today · '+new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'full'}).format(new Date());}catch(e){toast(e.message)}}
+async function loadStudents(){const {data,error}=await sb.from('acr_students').select('*').order('student_name');if(error)throw error;students=data||[]}
+async function loadEvents(){const {data,error}=await sb.from('acr_events').select('*').order('created_at',{ascending:false});if(error)throw error;events=data||[]}
+async function loadDashboard(){
+ const {data:tx,error}=await sb.from('acr_transactions').select('transaction_type,amount,created_at').gte('created_at',localDate()+'T00:00:00+05:30').lt('created_at',nextDate()+'T00:00:00+05:30');if(error)throw error;
+ const {data:ops,error:oe}=await sb.from('acr_warden_operations').select('operation_type,amount,created_at');if(oe)throw oe;
+ let dep=0,wd=0;for(const t of tx||[]){if(t.transaction_type==='deposit')dep+=Number(t.amount);if(t.transaction_type==='withdrawal')wd+=Number(t.amount)}
+ let util=0,repay=0;for(const o of ops||[]){if(['utilization','utilisation','expense'].includes(String(o.operation_type).toLowerCase()))util+=Number(o.amount);if(['repayment','cash_return','return'].includes(String(o.operation_type).toLowerCase()))repay+=Number(o.amount)}
+ const cash=depAllFromRowsPlaceholder();
+ // Fetch complete hostel totals independently from event tables.
+ const {data:alltx,error:te}=await sb.from('acr_transactions').select('transaction_type,amount');if(te)throw te;
+ let deposits=0,withdrawals=0;for(const t of alltx||[]){if(t.transaction_type==='deposit')deposits+=Number(t.amount);if(t.transaction_type==='withdrawal')withdrawals+=Number(t.amount)}
+ const held=deposits-withdrawals-util+repay;
+ $('s-students').textContent=students.length;$('s-cash').textContent=money(held);$('s-deposits').textContent=money(dep);$('s-withdrawals').textContent=money(wd);
+ ['students','cash','deposits','withdrawals'].forEach(k=>$('u-'+k).textContent='Last updated '+stamp());
+}
+function depAllFromRowsPlaceholder(){return 0}
+async function showTransactionHistory(type){try{let q=sb.from('acr_transactions').select('*').order('created_at',{ascending:false});if(type!=='all'){q=q.gte('created_at',localDate()+'T00:00:00+05:30').lt('created_at',nextDate()+'T00:00:00+05:30').eq('transaction_type',type)}const {data,error}=await q;if(error)throw error;const rows=(data||[]).map(t=>`<tr><td>${new Date(t.created_at).toLocaleString('en-IN')}</td><td>${esc(students.find(st=>st.id===t.student_id)?.student_name||'Unknown student')}</td><td>${esc(t.transaction_type)}</td><td>${money(t.amount)}</td><td>${esc(t.description||'')}</td></tr>`).join('');const total=(data||[]).reduce((n,t)=>n+Number(t.amount||0),0);modal(type==='all'?'Complete Transaction History':"Today's "+(type==='deposit'?'Deposit':'Withdrawal')+' History',`<p>Records: <b>${(data||[]).length}</b> · Total amount: <b>${money(total)}</b></p><div class="table-wrap"><table><thead><tr><th>Date / Time</th><th>Student</th><th>Type</th><th>Amount</th><th>Note</th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="empty">No transactions found.</td></tr>'}</tbody></table></div><div class="form-actions"><button class="btn light" onclick="closeModal()">Close</button><button class="btn teal" onclick="printOpenModal_()">Print</button></div>`)}catch(e){toast(e.message)}}
+function nextDate(){const d=new Date(localDate()+'T12:00:00+05:30');d.setDate(d.getDate()+1);return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata'}).format(d)}
+function panel(title,body,actions=''){modal(title,`${actions?`<div class="toolbar">${actions}</div>`:''}${body}<div class="form-actions"><button class="btn light" onclick="closeModal()">Close</button></div>`)}
+function closePanel(){$('workspace').classList.add('hidden');$('workspace').innerHTML=''}
+function show(which){
+ try{
+ if(which==='students')return showStudents();
+ if(which==='add-student')return addStudentForm();
+ if(which==='events')return showEvents();
+ if(which==='add-event')return addEventForm();
+ if(which==='contributions')return contributionForm();
+ if(which==='transfer')return transferForm();
+ if(which==='warden-util')return wardenForm();
+ if(which==='warden-cash'||which==='warden-history')return showWardenHistory(which);
+ if(which==='email')return emailPanel();
+ if(which==='backup')return backupPanel();
+ }catch(e){toast(e.message)}
+}
+function showStudents(){const rows=students.map(s=>`<tr><td><b>${esc(s.student_name)}</b><span class="muted">${esc(s.student_class)} · ID ${esc(s.student_id)}</span></td><td class="amount">${money(s.current_balance)}</td><td><div class="actions"><button class="btn small teal" onclick="transactionForm('${s.id}','deposit')">Deposit</button><button class="btn small red" onclick="transactionForm('${s.id}','withdrawal')">Withdraw</button><button class="btn small light" onclick="statement('${s.id}')">Statement</button><button class="btn small light" onclick="editStudentForm('${s.id}')">Edit</button></div></td></tr>`).join('');
+ modal('Registered Students · '+students.length,`<div class="toolbar"><input id="student-search" placeholder="Search name, class or ID" oninput="filterStudents()"><button class="btn teal" onclick="addStudentForm()">＋ Add Student</button></div><div class="table-wrap"><table id="student-table"><thead><tr><th>Student</th><th>Current balance</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="3" class="empty">No students added yet.</td></tr>'}</tbody></table></div><div class="form-actions"><button class="btn light" onclick="closeModal()">Close</button></div>`);
+}
+function filterStudents(){const q=$('student-search').value.toLowerCase();document.querySelectorAll('#student-table tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none')}
+function addStudentForm(){modal('Add Student',`<form onsubmit="saveStudent(event)"><div class="field"><label>Student name</label><input name="student_name" required></div><div class="field"><label>Class</label><input name="student_class" required></div><div class="field"><label>Student ID (must be unique)</label><input name="student_id" required></div><div class="notice">New student starts with ₹0.00. Add money later using Deposit.</div><div class="form-actions"><button type="button" class="btn light" onclick="closeModal()">Cancel</button><button class="btn teal">Save Student</button></div></form><hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><button class="btn light" type="button" onclick="changeCommonPinForm()">Change Common Warden PIN</button>`)}
+function changeCommonPinForm(){modal('Change Common Warden PIN',`<form onsubmit="saveCommonPin(event)"><div class="field"><label>Current Common Warden PIN</label><input name="current_pin" type="password" inputmode="numeric" required></div><div class="field"><label>New Common Warden PIN</label><input name="new_pin" type="password" inputmode="numeric" minlength="4" maxlength="12" required></div><div class="field"><label>Confirm New PIN</label><input name="confirm_pin" type="password" inputmode="numeric" minlength="4" maxlength="12" required></div><div class="form-actions"><button type="button" class="btn light" onclick="addStudentForm()">Back</button><button class="btn teal">Update PIN</button></div></form>`)}
+async function saveCommonPin(e){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));if(f.new_pin!==f.confirm_pin)return toast('New PIN and confirmation do not match');try{const result=await rpc('acr_change_warden_pin',{p_current_pin:f.current_pin,p_new_pin:f.new_pin});if(result===false)throw Error('Current PIN was not accepted');closeModal();toast('Common Warden PIN changed successfully');}catch(x){toast(x.message||'Could not change PIN')}}
+async function saveStudent(e){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await rpc('acr_add_student',{p_student_name:f.student_name,p_student_class:f.student_class,p_student_id:f.student_id});closeModal();acrReplaceNextModal=true;await refreshAll();showStudents();toast('Student added');}catch(x){toast(x.message)}}
+function editStudentForm(id){const s=students.find(x=>x.id===id);if(!s)return toast('Student record not found');modal('Edit Student Details',`<form onsubmit="saveStudentEdit(event,'${id}')"><div class="field"><label>Student name</label><input name="student_name" value="${esc(s.student_name)}" required></div><div class="field"><label>Class</label><input name="student_class" value="${esc(s.student_class||'')}" required></div><div class="field"><label>Student ID (editable · must be unique)</label><input name="student_id" value="${esc(s.student_id)}" autocomplete="off" required></div><div class="form-actions"><button type="button" class="btn light" onclick="closeModal()">Cancel</button><button class="btn teal" type="submit">Save Changes</button></div></form>`)}
+async function saveStudentEdit(e,id){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));const name=(f.student_name||'').trim(),studentClass=(f.student_class||'').trim(),studentId=(f.student_id||'').trim();const button=e.submitter;if(!name||!studentClass||!studentId)return toast('Please fill in the student name, class and ID.');if(button){button.disabled=true;button.textContent='Saving…'}try{const {data:updated,error}=await sb.rpc('acr_update_student_details',{p_student_record_id:String(id),p_student_name:name,p_student_class:studentClass,p_student_id:studentId});if(error)throw error;if(!updated)throw Error('The database did not confirm the student update.');closeModal();acrReplaceNextModal=true;await refreshAll();showStudents();toast('Student name, class and ID updated successfully')}catch(x){toast(x.message||'Could not update student details');if(button){button.disabled=false;button.textContent='Save Changes'}}}
+function transactionForm(id,type){const s=students.find(x=>x.id===id);modal(type==='deposit'?'Student Deposit':'Student Withdrawal',`<form onsubmit="saveTransaction(event,'${id}','${type}')"><p><b>${esc(s.student_name)}</b> · Current balance ${money(s.current_balance)}</p><div class="field"><label>Amount (₹)</label><input name="amount" type="number" min="0.01" step="0.01" required></div><div class="field"><label>Description / note</label><input name="description"></div><div class="field"><label>Common Warden PIN</label><input name="pin" type="password" inputmode="numeric" required></div><div class="form-actions"><button type="button" class="btn light" onclick="closeModal()">Cancel</button><button class="btn teal">Confirm ${type}</button></div></form>`)}
+async function saveTransaction(e,id,type){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await rpc('acr_student_transaction',{p_student_id:id,p_type:type,p_amount:Number(f.amount),p_description:f.description||null,p_pin:f.pin});closeModal();acrReplaceNextModal=true;await refreshAll();showStudents();toast('Transaction saved');}catch(x){toast(x.message)}}
+async function statement(id){try{const {data,error}=await sb.from('acr_transactions').select('*').eq('student_id',id).order('created_at',{ascending:false});if(error)throw error;const s=students.find(x=>x.id===id);if(!s)throw Error('Student record not found.');const rows=(data||[]).map(t=>`<tr><td>${new Date(t.created_at).toLocaleString('en-IN')}</td><td>${esc(t.transaction_type)}</td><td class="amount">${money(t.amount)}</td><td>${esc(t.description||'')}</td></tr>`).join('');modal('Statement · '+esc(s.student_name),`<p>Student ID: ${esc(s.student_id)} · Current balance: <b>${money(s.current_balance)}</b></p><div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th></tr></thead><tbody>${rows||'<tr><td colspan="4" class="empty">No transactions.</td></tr>'}</tbody></table></div><div class="form-actions"><button class="btn light" onclick="downloadStatementPDF('${id}')">Download PDF</button><button class="btn teal" onclick="printStudentStatement('${id}')">Print</button></div>`)}catch(e){toast(e.message)}}
+async function getStatementData_(id){const {data,error}=await sb.from('acr_transactions').select('*').eq('student_id',id).order('created_at',{ascending:true});if(error)throw error;const st=students.find(x=>x.id===id);if(!st)throw Error('Student record not found.');return {st,transactions:data||[]}}
+async function downloadStatementPDF(id){try{const {st,transactions}=await getStatementData_(id);const rows=transactions.map(t=>[new Date(t.created_at).toLocaleString('en-IN'),t.transaction_type,money(t.amount).replace('₹','Rs. '),t.description||'']);downloadAcrPdf_(`ACR_Statement_${safeFileName_(st.student_name)}.pdf`,'ACR · Student Account Statement',`Name: ${st.student_name} | Student ID: ${st.student_id} | Class: ${st.student_class||'—'} | Balance: ${money(st.current_balance).replace('₹','Rs. ')} | Generated: ${stamp()}`,['Date / Time','Transaction','Amount','Description'],rows)}catch(e){toast(e.message||'Could not download statement PDF')}}
+async function printStudentStatement(id){try{const {st,transactions}=await getStatementData_(id);const rows=transactions.map(t=>`<tr><td>${esc(new Date(t.created_at).toLocaleString('en-IN'))}</td><td>${esc(t.transaction_type)}</td><td>${esc(money(t.amount))}</td><td>${esc(t.description||'')}</td></tr>`).join('');printHtmlDocument_('ACR Student Statement',`<h1>ACR · Student Account Statement</h1><p><b>Name:</b> ${esc(st.student_name)} &nbsp; <b>Student ID:</b> ${esc(st.student_id)} &nbsp; <b>Class:</b> ${esc(st.student_class||'—')}</p><p><b>Current balance:</b> ${esc(money(st.current_balance))} &nbsp; <b>Generated:</b> ${esc(stamp())}</p><table><thead><tr><th>Date / Time</th><th>Transaction</th><th>Amount</th><th>Description</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No transactions recorded.</td></tr>'}</tbody></table>`)}catch(e){toast(e.message||'Could not print statement')}}
+function transferForm(){const opts=students.map(s=>`<option value="${s.id}">${esc(s.student_name)} · ${esc(s.student_id)} · ${money(s.current_balance)}</option>`).join('');panel('Student Transfer',`<div class="notice">Transfers move money between two registered student accounts. They are not deposits or withdrawals.</div><form onsubmit="saveTransfer(event)"><div class="grid2"><div class="field"><label>From student</label><select name="from" required>${opts}</select></div><div class="field"><label>To student</label><select name="to" required>${opts}</select></div></div><div class="field"><label>Amount (₹)</label><input name="amount" type="number" min=".01" step=".01" required></div><div class="field"><label>Common Warden PIN</label><input name="pin" type="password" required></div><button class="btn teal">Confirm Transfer</button></form>`)}
+async function saveTransfer(e){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await rpc('acr_transfer_student_balance',{p_from_student_id:f.from,p_to_student_id:f.to,p_amount:Number(f.amount),p_pin:f.pin});await refreshAll();showStudents();toast('Transfer completed');}catch(x){toast(x.message)}}
+async function sumTable(table,column){const {data,error}=await sb.from(table).select(column);if(error)throw error;return (data||[]).reduce((n,r)=>n+Number(r[column]||0),0)}
+async function showEvents(){
+ const [{data:contributions,error:ce},{data:handovers,error:he}]=await Promise.all([
+  sb.from('acr_event_contributions').select('event_id,amount'),
+  sb.from('acr_event_handovers').select('event_id,amount,handed_over_to,created_at')
+ ]);
+ if(ce)throw ce;if(he)throw he;
+ const contributionRows=contributions||[],handoverRows=handovers||[];
+ const rows=events.map(v=>{
+  const total=contributionRows.filter(x=>x.event_id===v.id).reduce((n,x)=>n+Number(x.amount||0),0);
+  const handover=handoverRows.find(x=>x.event_id===v.id);
+  const handoverAction=handover
+   ? `<button class="btn small light" disabled title="Handover already recorded">Handover complete</button>`
+   : `<button class="btn small teal" ${total>0?'':'disabled title="Add contributions before handover"'} onclick="handoverForm('${v.id}',${total})">Handover</button>`;
+  return `<tr><td><b>${esc(v.event_name)}</b><span class="muted">${esc(v.event_description||'')}</span></td><td><span class="pill ${v.status==='active'?'active':''}">${esc(v.status)}</span></td><td><div class="actions"><button class="btn small light" onclick="eventReport('${v.id}')">View report</button>${handoverAction}${v.status==='active'?`<button class="btn small light" onclick="archiveEvent('${v.id}')">Archive</button>`:`<button class="btn small light" onclick="restoreEvent('${v.id}')">Restore</button>`}</div></td></tr>`;
+ }).join('');
+ const contributionTotal=contributionRows.reduce((n,x)=>n+Number(x.amount||0),0);
+ const handoverTotal=handoverRows.reduce((n,x)=>n+Number(x.amount||0),0);
+ panel('Event Management',`<div class="grid2"><div class="stat"><div class="stat-head">TOTAL HANDOVER AMOUNT</div><strong>${money(handoverTotal)}</strong></div><div class="stat"><div class="stat-head">TOTAL CONTRIBUTION</div><strong>${money(contributionTotal)}</strong></div></div><div class="notice">Event funds are separate from student accounts and Warden hostel cash. Use the Handover action beside each event to record the amount delivered to its supervisor.</div><div class="table-wrap"><table><thead><tr><th>Event</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows||'<tr><td colspan="3" class="empty">No events created yet.</td></tr>'}</tbody></table></div>`)
+}
+function addEventForm(){modal('Add Event',`<form onsubmit="saveEvent(event)"><div class="field"><label>Event name</label><input name="name" required></div><div class="field"><label>Event details</label><textarea name="description" rows="3"></textarea></div><div class="field"><label>Event PIN (used to authorize event handover)</label><input name="pin" type="password" required></div><div class="form-actions"><button type="button" class="btn light" onclick="closeModal()">Cancel</button><button class="btn teal">Create Event</button></div></form>`)}
+async function saveEvent(e){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await rpc('acr_create_event',{p_event_name:f.name,p_event_description:f.description||null,p_event_pin:f.pin});closeModal();acrReplaceNextModal=true;await loadEvents();showEvents();toast('Event created');}catch(x){toast(x.message)}}
+async function archiveEvent(id){if(!confirm('Archive this event?'))return;try{await rpc('acr_set_event_status',{p_event_id:id,p_status:'archived'});await loadEvents();showEvents()}catch(e){toast(e.message)}}
+async function restoreEvent(id){try{await rpc('acr_set_event_status',{p_event_id:id,p_status:'active'});await loadEvents();showEvents()}catch(e){toast(e.message)}}
+function contributionForm(){const opts=events.map(e=>`<option value="${e.id}">${esc(e.event_name)}${e.status==='archived'?' (Archived)':''}</option>`).join('');panel('Event Contribution',`<div class="notice">Enter the contributor's name manually. A registered student account is not required. These amounts never enter hostel cash.</div><form onsubmit="saveContribution(event)"><div class="field"><label>Event</label><select name="event_id" required>${events.filter(e=>e.status==='active').map(e=>`<option value="${e.id}">${esc(e.event_name)}</option>`).join('')}</select></div><div class="field"><label>Contributor name</label><input name="name" required></div><div class="field"><label>Amount (₹)</label><input name="amount" type="number" min=".01" step=".01" required></div><div class="field"><label>Note (optional)</label><input name="note"></div><button class="btn teal">Save Contribution</button></form><hr style="border:0;border-top:1px solid var(--line);margin:20px 0"><div class="field"><label>Choose event</label><select id="contrib-event">${opts}</select></div><div class="actions"><button class="btn teal" onclick="sendEventContributionEmailFromWebsite_($('contrib-event').value,this)">Send Email</button><button class="btn light" onclick="printEventContribution($('contrib-event').value,this)">Print</button></div>`)}
+async function saveContribution(e){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await rpc('acr_add_event_contribution',{p_event_id:f.event_id,p_contributor_name:f.name,p_amount:Number(f.amount),p_note:f.note||null});e.target.reset();toast('Event contribution saved');}catch(x){toast(x.message)}}
+async function eventReport(id){try{const {data:c,error}=await sb.from('acr_event_contributions').select('*').eq('event_id',id).order('created_at',{ascending:false});if(error)throw error;const {data:h,error:he}=await sb.from('acr_event_handovers').select('*').eq('event_id',id).maybeSingle();if(he)throw he;const ev=events.find(e=>e.id===id);const total=(c||[]).reduce((a,x)=>a+Number(x.amount),0),hand=Number(h?.amount||0);const rows=(c||[]).map(x=>`<tr><td>${esc(x.contributor_name)}</td><td>${money(x.amount)}</td><td>${new Date(x.created_at).toLocaleString('en-IN')}</td><td>${esc(x.note||'')}</td></tr>`).join('');modal('Event Report · '+esc(ev?.event_name||''),`<p>Total contributions: <b>${money(total)}</b> · Handed over: <b>${money(hand)}</b> · Remaining: <b>${money(total-hand)}</b></p><div class="table-wrap"><table><thead><tr><th>Contributor</th><th>Amount</th><th>Date</th><th>Note</th></tr></thead><tbody>${rows||'<tr><td colspan="4" class="empty">No contributions.</td></tr>'}</tbody></table></div>${h?`<p class="notice">Handed to ${esc(h.handed_over_to||'Supervisor')} · ${money(h.amount)} · ${new Date(h.created_at).toLocaleString('en-IN')} ${esc(h.note||'')}</p>`:'<p class="notice">No handover has been recorded for this event.</p>'}<div class="form-actions"><button class="btn teal" onclick="sendEventContributionEmailFromWebsite_('${id}',this)">Send Event Email</button><button class="btn light" onclick="downloadEventPDF('${id}',this)">Download Complete Details (PDF)</button><button class="btn light" onclick="downloadEventCSV('${id}')">Download CSV</button>${!h?`<button class="btn light" onclick="handoverForm('${id}',${total})">Hand over funds</button>`:''}<button class="btn light" onclick="printOpenModal_()">Print</button></div>`)}catch(e){toast(e.message)}}
+async function downloadEventPDF(id,button){
+ try{
+  if(!id)throw Error('Choose an event first.');
+  if(button){button.disabled=true;button.textContent='Preparing PDF…'}
+  const ev=events.find(e=>e.id===id);
+  const [{data:c,error:ce},{data:h,error:he}]=await Promise.all([
+   sb.from('acr_event_contributions').select('*').eq('event_id',id).order('created_at',{ascending:true}),
+   sb.from('acr_event_handovers').select('*').eq('event_id',id).maybeSingle()
+  ]);
+  if(ce)throw ce;
+  if(he)throw he;
+  const list=c||[];
+  const total=list.reduce((n,x)=>n+Number(x.amount||0),0);
+  const handed=Number(h?.amount||0);
+  const rows=list.map((x,i)=>[
+   i+1,
+   x.contributor_name||'',
+   money(x.amount).replace('₹','Rs. '),
+   new Date(x.created_at).toLocaleString('en-IN'),
+   x.note||'—'
+  ]);
+  const eventName=ev?.event_name||'Event';
+  const subtitle=
+   'Event: '+eventName+
+   ' | Description: '+(ev?.event_description||'—')+
+   ' | Status: '+(ev?.status||'—')+
+   ' | Total contributions: '+money(total).replace('₹','Rs. ')+
+   ' | Total handed over: '+money(handed).replace('₹','Rs. ')+
+   ' | Remaining balance: '+money(total-handed).replace('₹','Rs. ')+
+   ' | Handover to: '+(h?.handed_over_to||'Not handed over')+
+   ' | Handover date: '+(h?.created_at?new Date(h.created_at).toLocaleString('en-IN'):'—')+
+   ' | Generated: '+stamp();
+  downloadAcrPdf_(
+   'ACR_Event_Contribution_'+safeFileName_(eventName)+'.pdf',
+   'ACR · Complete Event Contribution Report',
+   subtitle,
+   ['#','Contributor','Amount','Date / Time','Note'],
+   rows
+  );
+ }catch(e){
+  toast(e.message||'Could not download event contribution PDF');
+ }finally{
+  if(button){button.disabled=false;button.textContent='Download Complete Details (PDF)'}
+ }
+}
+async function sendEventContributionEmailFromWebsite_(id,button){if(!id)return toast('Choose an event first.');const target=button||null;const oldText=target?.textContent;if(target){target.disabled=true;target.textContent='Sending…'}try{const token=await getFreshAcrAccessToken_();const {data:before,error:be}=await sb.from('acr_email_logs').select('created_at').eq('email_type','event_contribution').eq('event_id',id).order('created_at',{ascending:false}).limit(1);if(be)throw be;const beforeStamp=before?.[0]?.created_at?new Date(before[0].created_at).getTime():0;const frameName='acr-event-email-frame';let frame=document.getElementById(frameName);if(!frame){frame=document.createElement('iframe');frame.name=frameName;frame.id=frameName;frame.style.display='none';document.body.appendChild(frame)}const form=document.createElement('form');form.method='POST';form.action='https://script.google.com/macros/s/AKfycbwwA8wTR6rymYufkVFfu4J7bdGXJOlgB8lkVKYgDuPLhshSBurA4NO-TtGdzJT2cs25/exec';form.target=frameName;form.style.display='none';for(const [name,value] of [['action','send_event_contribution'],['token',token],['event_id',id]]){const input=document.createElement('input');input.type='hidden';input.name=name;input.value=value;form.appendChild(input)}document.body.appendChild(form);form.submit();form.remove();const started=Date.now();let finished=false;while(Date.now()-started<90000){await new Promise(resolve=>setTimeout(resolve,2500));const {data:logs,error:le}=await sb.from('acr_email_logs').select('status,error_message,created_at,sent_at').eq('email_type','event_contribution').eq('event_id',id).order('created_at',{ascending:false}).limit(1);if(le)throw le;const latest=logs?.[0];if(latest&&new Date(latest.created_at).getTime()>beforeStamp){if(latest.status==='success')toast('Event contribution email sent successfully.');else toast('Event email failed: '+(latest.error_message||'Check Apps Script executions.'));finished=true;break}}if(!finished)toast('No event email result was recorded yet. Check Apps Script Executions before trying again.')}catch(e){toast(e.message||'Could not send event email')}finally{if(target){target.disabled=false;target.textContent=oldText}}}
+async function downloadEventCSV(id){const {data,error}=await sb.from('acr_event_contributions').select('*').eq('event_id',id);if(error)return toast(error.message);downloadCSV('event-contributions.csv',data)}
+function handoverForm(id,total){modal('Supervisor Handover',`<form onsubmit="saveHandover(event,'${id}')"><div class="notice">One handover is allowed per event. Total recorded contributions: ${money(total)}</div><div class="field"><label>Amount handed over (₹)</label><input name="amount" type="number" min=".01" step=".01" max="${total}" required></div><div class="field"><label>Supervisor name</label><input name="to" required></div><div class="field"><label>Note</label><input name="note"></div><div class="field"><label>Event PIN</label><input name="pin" type="password" required></div><div class="form-actions"><button type="button" class="btn light" onclick="closeModal()">Cancel</button><button class="btn teal">Confirm Handover</button></div></form>`)}
+async function saveHandover(e,id){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await rpc('acr_handover_event_funds',{p_event_id:id,p_amount:Number(f.amount),p_handed_over_to:f.to,p_note:f.note||null,p_event_pin:f.pin});closeModal();acrReplaceNextModal=true;toast('Handover recorded');await eventReport(id)}catch(x){toast(x.message)}}
+function wardenForm(){panel('Warden Cash Utilization',`<div class="notice">Utilization reduces Warden cash held. Repayment adds money back. These records are separate from event funds.</div><form onsubmit="saveWardenOp(event)"><div class="field"><label>Operation</label><select name="type"><option value="utilization">Utilization / Expense</option><option value="repayment">Repayment to Warden cash</option></select></div><div class="field"><label>Amount (₹)</label><input name="amount" type="number" min=".01" step=".01" required></div><div class="field"><label>Purpose</label><input name="purpose" required></div><div class="field"><label>Note (optional)</label><input name="note"></div><div class="field"><label>Common Warden PIN</label><input name="pin" type="password" required></div><button class="btn teal">Save Warden Operation</button></form>`)}
+async function saveWardenOp(e){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await rpc('acr_warden_cash_operation',{p_operation_type:f.type,p_amount:Number(f.amount),p_purpose:f.purpose,p_note:f.note||null,p_pin:f.pin});await refreshAll();toast('Warden cash operation saved');}catch(x){toast(x.message)}}
+async function showWardenHistory(which){try{const {data,error}=await sb.from('acr_warden_operations').select('*').order('created_at',{ascending:false});if(error)throw error;const ops=data||[];const filtered=ops.filter(x=>which==='warden-util'?['utilization','utilisation','expense','repayment'].includes(String(x.operation_type||'').toLowerCase()):true);const utilized=ops.filter(x=>['utilization','utilisation','expense'].includes(String(x.operation_type||'').toLowerCase())).reduce((n,x)=>n+Number(x.amount||0),0);const repaid=ops.filter(x=>String(x.operation_type||'').toLowerCase()==='repayment').reduce((n,x)=>n+Number(x.amount||0),0);const summary=which==='warden-history'?`<div class="grid2" style="margin-bottom:16px"><div class="stat"><div class="stat-head">TOTAL UTILIZED</div><strong>${money(utilized)}</strong><small>All recorded expenses up to today</small></div><div class="stat"><div class="stat-head">TOTAL REPAID</div><strong>${money(repaid)}</strong><small>All recorded repayments up to today</small></div></div>`:'';const rows=filtered.map(x=>`<tr><td>${new Date(x.created_at).toLocaleString('en-IN')}</td><td>${esc(x.operation_type)}</td><td>${money(x.amount)}</td><td>${esc(x.purpose||'')}</td><td>${esc(x.note||'')}</td></tr>`).join('');panel(which==='warden-util'?'Warden Utilization History':'Warden Cash History',`${summary}<div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Purpose</th><th>Note</th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="empty">No Warden operations recorded yet.</td></tr>'}</tbody></table></div>`)}catch(e){toast(e.message)}}
+async function readAcrEmailLogs_(){
+ const {data,error}=await sb.from('acr_email_logs').select('email_type,event_id,recipient,status,error_message,created_at,sent_at,report_date').in('email_type',['daily_report','daily_backup','event_contribution']).order('created_at',{ascending:false}).limit(100);
+ if(error)throw error;
+ return data||[];
+}
+function emailTime_(x){if(!x)return 'Not sent yet';const d=new Date(x);return isNaN(d.getTime())?'Not sent yet':new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'}).format(d)+' IST';}
+async function renderEmailStatus_(){
+ const logs=await readAcrEmailLogs_();
+ for(const [type,label] of [['daily_report','report'],['daily_backup','backup']]){
+  const success=logs.find(x=>x.email_type===type&&x.status==='success');
+  const latest=logs.find(x=>x.email_type===type);
+  const el=$('last-'+label);if(el)el.textContent=success?emailTime_(success.sent_at||success.created_at):'Not sent yet';
+  const detail=$('status-'+label);if(detail){detail.textContent=latest&&latest.status==='failed'?'Latest attempt failed'+(latest.error_message?': '+latest.error_message:''):(success?'Last attempt successful':'No email attempt recorded');detail.style.color=latest&&latest.status==='failed'?'#b42318':'';}
+ }
+ return logs;
+}
+async function emailPanel(){
+ try{
+  const logs=await renderEmailStatus_();
+  panel('Email',`<div class="notice">Send either email manually. Your existing automatic daily schedules remain unchanged.</div>
+  <div class="stat-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0">
+   <div class="stat"><b>Last Daily Report</b><div id="last-report" style="font-size:15px;margin-top:8px">Not sent yet</div><small id="status-report" class="muted">Checking status…</small></div>
+   <div class="stat"><b>Last Backup</b><div id="last-backup" style="font-size:15px;margin-top:8px">Not sent yet</div><small id="status-backup" class="muted">Checking status…</small></div>
+  </div>
+  <div class="actions"><button id="send-report-btn" class="btn teal" onclick="sendAcrEmailFromWebsite_('send_daily_report')">Send Daily Report</button><button id="send-backup-btn" class="btn light" onclick="sendAcrEmailFromWebsite_('send_backup')">Send Backup</button></div>
+  <p class="sub" style="margin-top:12px">The timestamps above are taken from recorded email results, not from button clicks.</p>
+  <iframe name="acr-email-result-frame" id="acr-email-result-frame" style="display:none"></iframe>`);
+  await renderEmailStatus_();
+ }catch(e){toast(e.message||'Could not load email status');}
+}
+async function sendAcrEmailFromWebsite_(action){
+ const isReport=action==='send_daily_report';
+ const button=$(isReport?'send-report-btn':'send-backup-btn');
+ if(!button)return;
+ const oldText=button.textContent;button.disabled=true;button.textContent='Sending…';
+ try{
+  const token=await getFreshAcrAccessToken_();
+  const before=await readAcrEmailLogs_();
+  const type=isReport?'daily_report':'daily_backup';
+  const previous=before.find(x=>x.email_type===type);
+  const beforeStamp=previous?new Date(previous.created_at).getTime():0;
+  const form=document.createElement('form');form.method='POST';form.action='https://script.google.com/macros/s/AKfycbwwA8wTR6rymYufkVFfu4J7bdGXJOlgB8lkVKYgDuPLhshSBurA4NO-TtGdzJT2cs25/exec';form.target='acr-email-result-frame';form.style.display='none';
+  for(const [name,value] of [['action',action],['token',token]]){const input=document.createElement('input');input.type='hidden';input.name=name;input.value=value;form.appendChild(input);}
+  document.body.appendChild(form);form.submit();form.remove();
+  const started=Date.now();let finished=false;
+  while(Date.now()-started<90000){
+   await new Promise(resolve=>setTimeout(resolve,2500));
+   const logs=await readAcrEmailLogs_();
+   const latest=logs.find(x=>x.email_type===type);
+   if(latest&&new Date(latest.created_at).getTime()>beforeStamp){
+    if(latest.status==='success'){toast(isReport?'Daily report email sent successfully.':'Backup email sent successfully.');}
+    else{toast('Email failed: '+(latest.error_message||'Please check Apps Script execution log.'));}
+    await renderEmailStatus_();finished=true;break;
+   }
+  }
+  if(!finished){await renderEmailStatus_();toast('No new email result was recorded yet. Check Apps Script Executions and try again only after confirming it did not send.');}
+ }catch(e){toast(e.message||'Could not send email');}
+ finally{button.disabled=false;button.textContent=oldText;}
+}
+
+function backupPanel(){panel('Backup and Reports',`<p>Download a full JSON backup or the current balance report for every registered student as a PDF. You can also restore a previously emailed ACR JSON backup.</p><div class="actions"><button class="btn teal" onclick="fullBackup()">Download Full Backup (JSON)</button><button class="btn light" onclick="printStudentBalances()">Download Current Balance (PDF)</button><button class="btn light" onclick="printCurrentBalances()">Print Current Balance</button></div><hr style="border:0;border-top:1px solid var(--line);margin:20px 0"><h3>Restore Backup</h3><div class="notice"><b>Exact Restore:</b> Choose a complete ACR JSON backup. Restoring replaces the current students, transactions, warden operations, events, contributions, handovers and settings with the selected backup. Records not present in that backup will be deleted.</div><div class="field"><label>Select JSON backup file</label><input id="acr-restore-file" type="file" accept=".json,application/json"></div><button class="btn teal" onclick="previewRestoreBackup()">Validate Backup</button><div id="restore-preview" class="sub"></div>`)}
+async function fullBackup(){try{const tables=['acr_students','acr_transactions','acr_events','acr_event_contributions','acr_event_handovers','acr_warden_operations','acr_settings'];let all=[];for(const t of tables){const {data,error}=await sb.from(t).select('*');if(error)throw error;all.push({table:t,rows:data||[]})}downloadBlob('ACR_HOSTEL_REGISTER_BACKUP_'+localDate()+'.json',JSON.stringify({backup_format:'ACR_HOSTEL_REGISTER_BACKUP',backup_version:1,exported_at:new Date().toISOString(),project:'ACR - Hostel Account Register',tables:all},null,2),'application/json')}catch(e){toast(e.message)}}
+async function previewRestoreBackup(){try{const file=$('acr-restore-file')?.files?.[0];if(!file)throw Error('Choose a JSON backup file first.');const text=await file.text();const parsed=JSON.parse(text);let tables=[];if(parsed.backup_format==='ACR_HOSTEL_REGISTER_BACKUP'&&parsed.data){const map={students:'acr_students',transactions:'acr_transactions',warden_operations:'acr_warden_operations',events:'acr_events',event_contributions:'acr_event_contributions',event_handovers:'acr_event_handovers',settings:'acr_settings'};tables=Object.entries(map).map(([k,t])=>({table:t,rows:parsed.data[k]||[]}));}else if(Array.isArray(parsed.tables)){tables=parsed.tables;}else{throw Error('This is not a supported ACR JSON backup.');}const allowed=['acr_students','acr_transactions','acr_events','acr_event_contributions','acr_event_handovers','acr_warden_operations','acr_settings'];if(tables.length!==allowed.length||new Set(tables.map(t=>t.table)).size!==allowed.length||!allowed.every(n=>tables.some(t=>t.table===n)))throw Error('Backup is incomplete. All seven ACR data sections must be present for exact restoration.');for(const t of tables){if(!allowed.includes(t.table)||!Array.isArray(t.rows))throw Error('Backup contains an unsupported table or invalid records.');for(const row of t.rows){if(!row||typeof row!=='object'||!(row.id||(t.table==='acr_settings'&&row.setting_key)))throw Error('A record is missing its record key. Backup validation stopped.');}}const counts=tables.map(t=>`${t.table}: ${t.rows.length}`).join('<br>');$('restore-preview').innerHTML=`<p><b>Complete backup validated for exact restoration.</b><br>${counts}</p><p class="notice">Restoring will replace all current records in these seven sections. Records created after this backup will be deleted.</p><button class="btn red" onclick="restoreValidatedBackup()">Replace Current Data with This Backup</button>`;window._acrValidatedBackup=tables;}catch(e){$('restore-preview').textContent=e.message;toast(e.message)}}
+async function restoreValidatedBackup(){const tables=window._acrValidatedBackup;if(!tables)return toast('Validate a backup first.');if(!confirm('EXACT RESTORE: This will DELETE current records that are not in the selected backup, then restore the backup. This cannot be undone unless you have another backup. Continue?'))return;try{const {data,error}=await sb.rpc('acr_restore_backup_snapshot',{p_backup:{tables}});if(error)throw Error(error.message);window._acrValidatedBackup=null;toast('Exact backup restoration completed successfully');await refreshAll();backupPanel();}catch(e){toast('Exact restore stopped: '+e.message)}}
+function studentBalanceCSV(){downloadCSV('acr-student-balances.csv',students.map(s=>({student_name:s.student_name,student_id:s.student_id,student_class:s.student_class,current_balance:s.current_balance,last_balance_update:s.last_balance_update})))}
+function currentBalanceReportHtml_(){const rows=students.map(s=>`<tr><td>${esc(s.student_name)}</td><td>${esc(s.student_id)}</td><td>${esc(s.student_class||'—')}</td><td>${esc(money(s.current_balance))}</td></tr>`).join('');const total=students.reduce((n,s)=>n+Number(s.current_balance||0),0);return `<h1>ACR · Current Student Balances</h1><p><b>Registered students:</b> ${students.length} &nbsp; <b>Total balance:</b> ${esc(money(total))} &nbsp; <b>Generated:</b> ${esc(stamp())}</p><table><thead><tr><th>Student Name</th><th>Student ID</th><th>Class</th><th>Current Balance</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No student records.</td></tr>'}</tbody></table>`}
+function printStudentBalances(){try{if(!students.length)return toast('No student records to download.');const rows=students.map(s=>[s.student_name,s.student_id,s.student_class,money(s.current_balance).replace('₹','Rs. ')]);downloadAcrPdf_(`ACR_Current_Balance_${localDate()}.pdf`,'ACR · Current Student Balances',`Registered students: ${students.length} | Total balance: ${money(students.reduce((n,s)=>n+Number(s.current_balance||0),0))} | Generated: ${stamp()}`,['Student Name','Student ID','Class','Current Balance'],rows)}catch(e){toast(e.message||'Could not download current balance PDF')}}
+function printCurrentBalances(){try{if(!students.length)return toast('No student records to print.');printHtmlDocument_('ACR Current Student Balances',currentBalanceReportHtml_())}catch(e){toast(e.message||'Could not print current balances')}}
+function printOpenModal_(){try{const modalEl=document.querySelector('#modalroot .modal');if(!modalEl)return toast('There is no report open to print.');const clone=modalEl.cloneNode(true);clone.querySelectorAll('button,.form-actions,.close').forEach(el=>el.remove());const title=clone.querySelector('.modal-head h3')?.textContent||'ACR Report';clone.querySelector('.modal-head')?.remove();printHtmlDocument_('ACR '+title,clone.innerHTML)}catch(e){toast(e.message||'Could not print this report')}}
+function downloadCSV(name,rows){if(!rows?.length)return toast('No records to download');const keys=[...new Set(rows.flatMap(x=>Object.keys(x)))];const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const csv=[keys.map(q).join(','),...rows.map(r=>keys.map(k=>q(r[k])).join(','))].join('\r\n');downloadBlob(name,'\ufeff'+csv,'text/csv;charset=utf-8')}
+function safeFileName_(value){return String(value||'Student').normalize('NFKD').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,50)||'Student'}
+function blobToBase64_(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{const result=String(reader.result||'');resolve(result.split(',')[1]||'')};reader.onerror=()=>reject(reader.error||Error('Could not read the file for saving.'));reader.readAsDataURL(blob)})}
+async function downloadBlob(name,content,type){
+ const blob=content instanceof Blob?content:new Blob([content],{type:type||'application/octet-stream'});
+ try{
+  const native=ACRNative;
+  if(native?.saveFile){
+   const data=await blobToBase64_(blob);
+   await native.saveFile({filename:name,data,mimeType:blob.type||type||'application/octet-stream'});
+   toast('Saved in your phone Downloads folder → ACR: '+name);
+   return;
+  }
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);a.click();
+  setTimeout(()=>{a.remove();URL.revokeObjectURL(url)},60000);
+  toast('Download started. Check your Downloads folder.');
+ }catch(e){toast(e?.message||'Could not save the file. Please try again.');}
+}
+function downloadAcrPdf_(filename,title,subtitle,headers,rows){if(!window.jspdf?.jsPDF)throw Error('The PDF component did not load. Please check your internet connection and try again.');const landscape=headers.length>4;const doc=new window.jspdf.jsPDF({orientation:landscape?'landscape':'portrait',unit:'pt',format:'a4',compress:true});const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight(),margin=34;let y=margin;doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(title,margin,y);y+=22;doc.setFont('helvetica','normal');doc.setFontSize(9);const sub=doc.splitTextToSize(String(subtitle||''),pageW-margin*2);doc.text(sub,margin,y);y+=sub.length*12+15;const usableW=pageW-margin*2,colW=usableW/headers.length;const drawHeader=()=>{doc.setFillColor(235,241,247);doc.rect(margin,y-11,usableW,22,'F');doc.setFont('helvetica','bold');doc.setFontSize(8);headers.forEach((h,i)=>doc.text(doc.splitTextToSize(String(h),colW-10).slice(0,2),margin+i*colW+5,y));y+=22;doc.setFont('helvetica','normal')};drawHeader();doc.setFontSize(8);for(const row of rows){const wrapped=row.map((v,i)=>doc.splitTextToSize(String(v??'—'),colW-10));const lineCount=Math.max(1,...wrapped.map(a=>a.length));const rh=Math.max(22,lineCount*10+10);if(y+rh>pageH-margin){doc.addPage();y=margin;drawHeader()}doc.setDrawColor(220,226,233);doc.line(margin,y+rh-5,margin+usableW,y+rh-5);wrapped.forEach((lines,i)=>doc.text(lines,margin+i*colW+5,y+3));y+=rh}const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text(`ACR · ${i}/${pages}`,pageW-margin,pageH-16,{align:'right'})}downloadBlob(filename,doc.output('blob'),'application/pdf')}
+function printHtmlDocument_(title,bodyHtml){
+ const html=`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>html,body{background:#fff}body{font:13px Arial,sans-serif;color:#182338;padding:24px}h1{font-size:20px;margin:0 0 12px}p{line-height:1.5}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #d9dee7;padding:8px;text-align:left;font-size:11px;vertical-align:top}th{background:#f1f4f8}@page{size:auto;margin:12mm}@media print{body{padding:0}}</style></head><body>${bodyHtml}</body></html>`;
+ const native=ACRNative;
+ if(native?.printHtml){
+  native.printHtml({title:String(title||'ACR Report'),html})
+   .then(()=>toast('Android print options opened.'))
+   .catch(e=>toast(e?.message||'Could not open Android print options.'));
+  return;
+ }
+ const frame=document.createElement('iframe');
+ frame.setAttribute('aria-hidden','true');frame.setAttribute('title','ACR print document');
+ frame.style.cssText='position:fixed;left:-10000px;top:0;width:800px;height:1100px;border:0;';
+ document.body.appendChild(frame);
+ const win=frame.contentWindow;const d=frame.contentDocument||win.document;
+ let finished=false,printStarted=false;
+ const returnToDashboard=()=>{if(finished)return;finished=true;setTimeout(()=>{try{frame.remove()}catch(e){};try{closeModal();closePanel();window.scrollTo(0,0)}catch(e){}},250)};
+ d.open();d.write(html);d.close();
+ const visibilityFallback=()=>{if(printStarted&&document.visibilityState==='visible')finish()};
+ document.addEventListener('visibilitychange',visibilityFallback);
+ const cleanupListeners=()=>document.removeEventListener('visibilitychange',visibilityFallback);
+ const finish=()=>{cleanupListeners();returnToDashboard()};
+ win.onafterprint=finish;try{win.addEventListener('afterprint',finish,{once:true})}catch(e){}
+ setTimeout(()=>{try{printStarted=true;win.focus();win.print()}catch(e){cleanupListeners();frame.remove();toast('Printing could not be opened. Please open ACR in Chrome.');return}},350);
+ setTimeout(()=>{if(printStarted&&!finished&&document.visibilityState==='visible')finish()},180000);
+}
+async function printEventContribution(id,button){if(!id)return toast('Choose an event first.');if(button){button.disabled=true;button.textContent='Preparing…'}try{const ev=events.find(e=>e.id===id);const [{data:c,error:ce},{data:h,error:he}]=await Promise.all([sb.from('acr_event_contributions').select('*').eq('event_id',id).order('created_at',{ascending:true}),sb.from('acr_event_handovers').select('*').eq('event_id',id).maybeSingle()]);if(ce)throw ce;if(he)throw he;const list=c||[],total=list.reduce((n,x)=>n+Number(x.amount||0),0),hand=Number(h?.amount||0);const rows=list.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.contributor_name)}</td><td>${esc(money(x.amount))}</td><td>${esc(new Date(x.created_at).toLocaleString('en-IN'))}</td><td>${esc(x.note||'—')}</td></tr>`).join('');const handover=h?`<p><b>Handed over to:</b> ${esc(h.handed_over_to||'—')} &nbsp; <b>Amount:</b> ${esc(money(h.amount))} &nbsp; <b>Date:</b> ${esc(new Date(h.created_at).toLocaleString('en-IN'))}<br><b>Note:</b> ${esc(h.note||'—')}</p>`:'<p>No handover recorded.</p>';printHtmlDocument_('ACR Event Contribution',`<h1>ACR · Event Contribution</h1><p><b>Event:</b> ${esc(ev?.event_name||'Event')}<br><b>Description:</b> ${esc(ev?.event_description||'—')}<br><b>Status:</b> ${esc(ev?.status||'—')}<br><b>Generated:</b> ${esc(stamp())}</p><p><b>Total Contributions:</b> ${esc(money(total))} &nbsp; <b>Handed Over:</b> ${esc(money(hand))} &nbsp; <b>Remaining:</b> ${esc(money(total-hand))}</p><h3>Contributor Details</h3><table><thead><tr><th>#</th><th>Contributor</th><th>Amount</th><th>Date / Time</th><th>Note</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No contributions recorded.</td></tr>'}</tbody></table><h3>Handover Details</h3>${handover}`)}catch(e){toast(e.message||'Could not prepare event print')}finally{if(button){button.disabled=false;button.textContent='Print'}}}
+// ACR popup stack: each new popup keeps the previous popup underneath.
+let acrModalStack=[];
+let acrReplaceNextModal=false;
+
+function modal(title,body){
+ const root=$('modalroot');
+ if(root.innerHTML){
+  if(acrReplaceNextModal){
+   acrReplaceNextModal=false;
+  }else{
+   acrModalStack.push(root.innerHTML);
+  }
+ }else{
+  acrReplaceNextModal=false;
+ }
+ root.innerHTML=`<div class="modal-back" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-head"><h3>${title}</h3><button class="close" onclick="closeModal()">×</button></div>${body}</div></div>`;
+}
+
+function closeModal(){
+ const root=$('modalroot');
+ if(acrModalStack.length){
+  root.innerHTML=acrModalStack.pop();
+ }else{
+  root.innerHTML='';
+ }
+ acrReplaceNextModal=false;
+}
+// Android system Back: close the topmost ACR layer before leaving the app.
+let acrLastBackAt=0;
+window.addEventListener('acrAndroidBack',()=>{
+ const modalLayer=document.querySelector('#modalroot .modal-back');
+ if(modalLayer){closeModal();return;}
+ const workspace=$('workspace');
+ if(workspace&&!workspace.classList.contains('hidden')){closePanel();window.scrollTo(0,0);return;}
+ const active=document.activeElement;
+ if(active&&/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)){active.blur();return;}
+ const now=Date.now();
+ if(now-acrLastBackAt<2000){if(ACRNative?.exitApp){ACRNative.exitApp().catch(e=>toast(e?.message||'Could not close ACR.'));}}
+ else{acrLastBackAt=now;toast('Press Back again to exit ACR.');}
+});
+init();
+</script></body></html>
