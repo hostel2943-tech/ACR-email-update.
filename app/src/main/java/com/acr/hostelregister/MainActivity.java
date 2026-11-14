@@ -1,71 +1,101 @@
 package com.acr.hostelregister;
 
-import android.app.Activity;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
-import android.webkit.WebResourceRequest;
-import android.content.Intent;
-import android.net.Uri;
 
-public class MainActivity extends Activity {
+import androidx.activity.OnBackPressedCallback;
 
-    private static final String HOME_URL =
-        "https://hostel2943-tech.github.io/ACR-email-update/";
+import com.getcapacitor.BridgeActivity;
 
-    private WebView webView;
+public class MainActivity extends BridgeActivity {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    private OnBackPressedCallback backPressedCallback;
 
-        webView = new WebView(this);
-        setContentView(webView);
+    private void enableImmersiveMode() {
 
-        WebSettings settings = webView.getSettings();
+        Window window = getWindow();
 
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams params =
+                    window.getAttributes();
 
-        webView.setWebViewClient(new WebViewClient() {
+            params.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams
+                    .LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
 
-            @Override
-            public boolean shouldOverrideUrlLoading(
-                WebView view,
-                WebResourceRequest request
-            ) {
-                Uri uri = request.getUrl();
-                String host = uri.getHost();
+            window.setAttributes(params);
+        }
 
-                if (host != null &&
-                    (host.equals("hostel2943-tech.github.io")
-                    || host.endsWith(".supabase.co"))) {
-                    return false;
-                }
-
-                startActivity(
-                    new Intent(Intent.ACTION_VIEW, uri)
-                );
-
-                return true;
-            }
-        });
-
-        webView.setWebChromeClient(new WebChromeClient());
-        webView.loadUrl(HOME_URL);
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        );
     }
 
     @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
+    public void onCreate(Bundle savedInstanceState) {
+
+        registerPlugin(ACRNativePlugin.class);
+
+        super.onCreate(savedInstanceState);
+
+        enableImmersiveMode();
+
+        backPressedCallback = new OnBackPressedCallback(true) {
+
+            @Override
+            public void handleOnBackPressed() {
+
+                if (getBridge() == null) {
+                    finish();
+                    return;
+                }
+
+                WebView webView = getBridge().getWebView();
+
+                if (webView == null) {
+                    finish();
+                    return;
+                }
+
+                webView.post(() -> {
+
+                    webView.evaluateJavascript(
+                        "(function() {" +
+                        " if (typeof window.acrHandleAndroidBack === 'function') {" +
+                        "   return window.acrHandleAndroidBack();" +
+                        " }" +
+                        " window.dispatchEvent(new Event('acrAndroidBack'));" +
+                        " return true;" +
+                        "})()",
+                        null
+                    );
+
+                });
+            }
+        };
+
+        getOnBackPressedDispatcher().addCallback(
+                this,
+                backPressedCallback
+        );
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+
+        super.onWindowFocusChanged(hasFocus);
+
+        if (hasFocus) {
+            enableImmersiveMode();
         }
     }
 }
